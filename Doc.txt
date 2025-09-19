@@ -1,0 +1,380 @@
+===============================================================================
+                    DOCUMENTACIÓN TÉCNICA COMPLETA
+                         VISION CREATIVA E-COMMERCE
+                        Plataforma de Mochilas Personalizables
+===============================================================================
+
+📅 Fecha de Análisis: 19 de septiembre de 2025
+🔍 Versión del Proyecto: 2.2 (Unificada Final)
+👨‍💻 Repositorio: https://github.com/ddnte6696/vision_creativa.git
+📊 Total de archivos: 60 archivos | 3,974 líneas de código | 4.69 MB
+
+===============================================================================
+                            🏗️ ARQUITECTURA GENERAL
+===============================================================================
+
+Vision Creativa es una plataforma de e-commerce especializada en mochilas y bolsas 
+personalizables que opera bajo un modelo híbrido B2C (Business to Consumer) y 
+B2B (Business to Business). La aplicación está desarrollada en PHP puro con 
+arquitectura MVC simplificada, base de datos MySQL, y frontend responsivo.
+
+🎯 CARACTERÍSTICAS PRINCIPALES:
+• Catálogo de productos B2C con personalización
+• Portal de co-creación B2B para empresas
+• Sistema de autenticación y gestión de usuarios
+• Carrito de compras y checkout completo
+• Panel de administración de productos
+• API REST para comunicación frontend-backend
+
+===============================================================================
+                        📁 ESTRUCTURA DE DIRECTORIOS
+===============================================================================
+
+vision_creativa/
+│
+├── 📄 ARCHIVOS RAÍZ
+│   ├── index.php                    # Página principal del catálogo
+│   ├── db_config.php                # Configuración de base de datos
+│   ├── login.php                    # Página de autenticación
+│   ├── registro.php                 # Página de registro de usuarios
+│   ├── producto.php                 # Vista detallada del producto
+│   ├── carrito.php                  # Página del carrito de compras
+│   ├── checkout.php                 # Proceso de finalización de compra
+│   ├── mi_cuenta.php                # Panel de usuario
+│   ├── b2b_nuevo_proyecto.php       # Portal de co-creación B2B
+│   ├── README.md                    # Documentación básica
+│   └── Doc.txt                      # Esta documentación
+│
+├── 🔌 API/ (Servicios Backend)
+│   ├── producto.php                 # API de productos
+│   ├── auth/                        # Servicios de autenticación
+│   │   ├── login.php               # Login via AJAX
+│   │   ├── logout.php              # Cerrar sesión
+│   │   ├── register.php            # Registro de usuarios
+│   │   └── check_email.php         # Validación de email
+│   ├── account/                     # Gestión de cuenta
+│   │   ├── update_profile.php      # Actualizar perfil
+│   │   └── manage_address.php      # Gestión de direcciones
+│   ├── b2b/                        # Servicios B2B
+│   │   ├── crear_proyecto.php      # Crear proyecto empresarial
+│   │   └── get_config_options.php  # Opciones de configuración
+│   └── b2c/                        # Servicios B2C
+│       └── procesar_pedido.php     # Procesar pedidos de consumidores
+│
+├── 🎨 CSS/ (Estilos Frontend)
+│   ├── estilos.css                 # Estilos principales unificados
+│   ├── auth.css                    # Estilos de autenticación
+│   ├── account.css                 # Estilos del panel de usuario
+│   ├── cart.css                    # Estilos del carrito
+│   ├── catalog.css                 # Estilos del catálogo
+│   ├── checkout.css                # Estilos del checkout
+│   ├── b2b-creator.css             # Estilos del portal B2B
+│   └── components/
+│       └── forms.css               # Componentes de formularios
+│
+├── ⚙️ JS/ (Lógica Frontend)
+│   ├── main.js                     # Funciones globales y App object
+│   ├── auth.js                     # Lógica de autenticación
+│   ├── account.js                  # Gestión de cuenta de usuario
+│   ├── cart.js                     # Funcionalidad del carrito
+│   ├── checkout.js                 # Proceso de checkout
+│   ├── producto.js                 # Vista del producto
+│   ├── b2b-configurator.js         # Configurador B2B
+│   ├── address-manager.js          # Gestión de direcciones
+│   └── pagina-carrito.js           # Página específica del carrito
+│
+├── 🖼️ IMG/ (Recursos Visuales)
+│   ├── logo.png                    # Logo de la empresa
+│   ├── hero-background.jpg         # Imagen principal del hero
+│   ├── mochila-escolar-*.jpg       # Imágenes de productos (6 colores)
+│   ├── designs/                    # Diseños base de productos
+│   │   ├── base_commuter.png      # Diseño mochila commuter
+│   │   ├── base_legacy.png        # Diseño mochila legacy
+│   │   ├── base_sprint.png        # Diseño mochila sprint
+│   │   ├── base_weekender.png     # Diseño mochila weekender
+│   │   └── placeholder.png        # Imagen placeholder
+│   └── textures/                   # Texturas de materiales
+│       ├── canvas_cotton.jpg      # Textura algodón canvas
+│       ├── nylon_ripstop.jpg      # Textura nylon ripstop
+│       ├── polyester_600d.jpg     # Textura poliéster 600D
+│       └── pu_leather.jpg         # Textura cuero PU
+│
+├── 🗄️ DB/ (Base de Datos)
+│   └── analis20_diego(5).sql       # Script completo de base de datos
+│
+└── 📋 TEMPLATES/ (Plantillas PHP)
+    ├── header.php                  # Cabecera común
+    ├── footer.php                  # Pie de página común
+    └── address_form.php            # Formulario de direcciones
+
+===============================================================================
+                        🗄️ ESTRUCTURA DE BASE DE DATOS
+===============================================================================
+
+La base de datos 'analis20_diego' contiene 15 tablas principales:
+
+🔹 GESTIÓN DE PRODUCTOS:
+├── productos                    # Catálogo principal de productos
+├── variaciones_producto         # Variaciones (colores, tallas, etc.)
+├── producto_specs              # Especificaciones técnicas
+├── disenos_base               # Diseños base para personalización
+├── atributos_color            # Paleta de colores disponibles
+├── atributos_tela             # Tipos de materiales/telas
+└── atributos_spec             # Especificaciones adicionales
+
+🔹 GESTIÓN DE USUARIOS Y PEDIDOS:
+├── usuarios                   # Información de usuarios registrados
+├── pedidos                    # Historial de pedidos B2C
+└── crm_interacciones         # Interacciones del CRM
+
+🔹 MÓDULO B2B EMPRESARIAL:
+├── proyectos_b2b             # Proyectos empresariales
+├── configuracion_proyecto_b2b # Configuraciones de proyectos
+├── cotizaciones_b2b          # Cotizaciones para empresas
+├── contratos_b2b             # Contratos firmados
+└── chat_mensajes             # Sistema de mensajería interna
+
+RELACIONES CLAVE:
+• productos → variaciones_producto (1:N)
+• productos → producto_specs (1:N)
+• usuarios → pedidos (1:N)
+• usuarios → proyectos_b2b (1:N)
+
+===============================================================================
+                        🔄 FLUJO DE ARCHIVOS Y PROCESOS
+===============================================================================
+
+🌟 FLUJO PRINCIPAL B2C (Consumidor Final):
+
+1. 🏠 ENTRADA AL SISTEMA
+   index.php → db_config.php → templates/header.php
+   ↓
+   Consulta productos activos desde BD
+   ↓
+   Renderiza grid de productos con variaciones
+
+2. 👤 AUTENTICACIÓN
+   login.php → js/auth.js → api/auth/login.php
+   ↓
+   Valida credenciales en BD
+   ↓
+   Crea sesión PHP + respuesta JSON
+
+3. 🛍️ SELECCIÓN DE PRODUCTO
+   producto.php → js/producto.js → api/producto.php
+   ↓
+   Carga detalles + variaciones + specs
+   ↓
+   Permite personalización (colores, materiales)
+
+4. 🛒 GESTIÓN DE CARRITO
+   js/cart.js → Almacenamiento en sessionStorage
+   ↓
+   carrito.php → Renderiza items del carrito
+   ↓
+   js/pagina-carrito.js → Actualizaciones dinámicas
+
+5. 💳 PROCESO DE COMPRA
+   checkout.php → js/checkout.js → api/b2c/procesar_pedido.php
+   ↓
+   Valida datos + procesa pago
+   ↓
+   Crea registro en tabla 'pedidos'
+
+🏢 FLUJO EMPRESARIAL B2B:
+
+1. 🎯 PORTAL DE CO-CREACIÓN
+   b2b_nuevo_proyecto.php → js/b2b-configurator.js
+   ↓
+   Formulario de requerimientos empresariales
+   ↓
+   Configurador visual interactivo
+
+2. ⚙️ PROCESAMIENTO B2B
+   api/b2b/crear_proyecto.php
+   ↓
+   Registra en 'proyectos_b2b' + 'configuracion_proyecto_b2b'
+   ↓
+   Genera cotización automática
+
+3. 💼 GESTIÓN EMPRESARIAL
+   CRM interno → chat_mensajes
+   ↓
+   Seguimiento de proyectos
+   ↓
+   Contratos y cotizaciones
+
+===============================================================================
+                        🔧 TECNOLOGÍAS Y DEPENDENCIAS
+===============================================================================
+
+🖥️ BACKEND:
+• PHP 7.4+ (sin frameworks, PHP puro)
+• MySQL/MariaDB 10.4+
+• Apache/Nginx con mod_rewrite
+• Sesiones PHP nativas
+• MySQLi para conexiones BD
+
+🎨 FRONTEND:
+• HTML5 + CSS3 (sin frameworks CSS)
+• JavaScript ES6+ (vanilla, sin frameworks)
+• CSS Grid + Flexbox para layouts
+• Variables CSS para theming
+• SweetAlert2 para notificaciones
+• Bootstrap Icons para iconografía
+
+📊 ARQUITECTURA:
+• Patrón MVC simplificado
+• API REST con respuestas JSON
+• Separación clara de responsabilidades
+• Reutilización de componentes (templates)
+• Assets organizados por funcionalidad
+
+===============================================================================
+                        🎨 SISTEMA DE DISEÑO
+===============================================================================
+
+🎨 PALETA DE COLORES:
+• --azul-vw: #0A3A82          # Azul Volkswagen (principal)
+• --azul-bmw: #1C69D4         # Azul BMW (secundario)
+• --gris-oscuro-vw: #1C1C1C   # Gris oscuro (texto)
+• --gris-claro-bmw: #BDC3C7   # Gris claro (bordes)
+• --blanco-neutro: #FBFAFA    # Blanco (fondos)
+
+🖼️ RECURSOS VISUALES:
+• Logo corporativo optimizado
+• Imágenes de productos en 6 colores base
+• Texturas de materiales para personalización
+• Diseños base para configurador B2B
+• Background pattern sutil con radial-gradient
+
+📱 RESPONSIVIDAD:
+• Mobile-first approach
+• Breakpoints estándar
+• Sidebar colapsible en móviles
+• Grid adaptativo para productos
+
+===============================================================================
+                        ⚡ FUNCIONALIDADES CLAVE
+===============================================================================
+
+🛍️ MÓDULO B2C:
+✅ Catálogo de productos con filtros
+✅ Personalización de productos (colores, materiales)
+✅ Carrito de compras persistente
+✅ Checkout completo con validaciones
+✅ Gestión de cuenta de usuario
+✅ Historial de pedidos
+
+🏢 MÓDULO B2B:
+✅ Portal de co-creación interactivo
+✅ Configurador visual de productos
+✅ Sistema de cotizaciones automáticas
+✅ Gestión de proyectos empresariales
+✅ CRM básico con mensajería
+✅ Contratos y seguimiento
+
+🔐 SISTEMA DE USUARIOS:
+✅ Registro y autenticación
+✅ Roles de usuario (cliente, admin)
+✅ Gestión de perfil y direcciones
+✅ Sesiones seguras
+
+💻 CARACTERÍSTICAS TÉCNICAS:
+✅ API REST bien documentada
+✅ Validaciones frontend y backend
+✅ Manejo de errores robusto
+✅ Optimización de consultas BD
+✅ Código modular y escalable
+
+===============================================================================
+                        🚀 CONFIGURACIÓN Y DESPLIEGUE
+===============================================================================
+
+📋 REQUISITOS MÍNIMOS:
+• PHP 7.4 o superior
+• MySQL 5.7 o MariaDB 10.4+
+• Apache con mod_rewrite habilitado
+• Extensiones PHP: mysqli, json, session
+
+⚙️ CONFIGURACIÓN:
+1. Clonar repositorio desde GitHub
+2. Configurar base de datos en db_config.php
+3. Importar script SQL desde /db/
+4. Configurar virtual host o subdominio
+5. Ajustar permisos de archivos (755/644)
+
+🌐 VARIABLES DE ENTORNO:
+• BASE_URL: Auto-detectada dinámicamente
+• Credenciales BD: analis20_diego / T1plM1lS
+• Charset: UTF-8 (utf8mb4)
+
+===============================================================================
+                        📈 MÉTRICAS DEL PROYECTO
+===============================================================================
+
+📊 ESTADÍSTICAS DE CÓDIGO:
+• Total de archivos: 60
+• Líneas de código: 3,974
+• Archivos PHP: 20
+• Archivos JavaScript: 9
+• Archivos CSS: 8
+• Imágenes: 18
+• Tamaño total: 4.69 MB
+
+🗄️ ESTRUCTURA DE BD:
+• Total de tablas: 15
+• Relaciones definidas: 8
+• Índices optimizados: Sí
+• Charset: utf8mb4_general_ci
+
+⚡ PERFORMANCE:
+• Consultas optimizadas con índices
+• Carga lazy de imágenes
+• Assets minificados para producción
+• Caché de sesiones PHP
+
+===============================================================================
+                        🔮 ROADMAP Y EVOLUCIÓN
+===============================================================================
+
+🚧 PRÓXIMAS FUNCIONALIDADES:
+• Sistema de pagos integrado (PayPal, Stripe)
+• Panel de administración completo
+• Inventario en tiempo real
+• Notificaciones push
+• Integración con CRM externos
+• App móvil nativa
+
+🔧 MEJORAS TÉCNICAS:
+• Migración a framework PHP (Laravel/Symfony)
+• Implementación de Cache (Redis)
+• Dockerización del proyecto
+• CI/CD con GitHub Actions
+• Testing automatizado (PHPUnit)
+
+===============================================================================
+                        👥 INFORMACIÓN DEL PROYECTO
+===============================================================================
+
+🏷️ Nombre: Vision Creativa E-commerce
+🔗 Repositorio: https://github.com/ddnte6696/vision_creativa.git
+👨‍💻 Propietario: ddnte6696
+🌿 Rama principal: main
+📅 Última actualización: 19 de septiembre de 2025
+📋 Licencia: Propietaria
+🎯 Estado: En desarrollo activo
+
+===============================================================================
+                            📞 CONTACTO Y SOPORTE
+===============================================================================
+
+Para consultas técnicas o colaboraciones:
+• GitHub: @ddnte6696
+• Repositorio: https://github.com/ddnte6696/vision_creativa
+
+🎉 ¡Vision Creativa - Diseñados para tu Aventura Diaria! 🎉
+
+===============================================================================
+                        🔚 FIN DE LA DOCUMENTACIÓN
+===============================================================================

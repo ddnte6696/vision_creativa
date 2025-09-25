@@ -14,9 +14,9 @@ define('BASE_URL', $protocol . $host . $script_dir);
 
 // --- CONEXIÓN A LA BASE DE DATOS ---
 $servername = "localhost";
-$username = "analis20_diego"; // Reemplaza con tu usuario
-$password = "T1plM1lS"; // Reemplaza con tu contraseña
-$dbname = "analis20_diego";
+$username = "root"; // Reemplaza con tu usuario
+$password = ""; // Reemplaza con tu contraseña
+$dbname = "diginet_vision_creativa";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 

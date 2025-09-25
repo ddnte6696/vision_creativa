@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.0
+-- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 19-09-2025 a las 21:51:13
--- Versión del servidor: 10.4.27-MariaDB
--- Versión de PHP: 7.4.33
+-- Tiempo de generación: 25-09-2025 a las 19:04:36
+-- Versión del servidor: 10.4.32-MariaDB
+-- Versión de PHP: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Base de datos: `analis20_diego`
+-- Base de datos: `diginet_vision_creativa`
 --
 
 -- --------------------------------------------------------
@@ -228,7 +228,7 @@ CREATE TABLE `productos` (
 --
 
 INSERT INTO `productos` (`id`, `sku`, `nombre`, `descripcion`, `precio_base`, `activo`, `origen`, `id_proyecto_b2b_origen`) VALUES
-(1, 'VC-SCH-001', 'Mochila Escolar \"Explorer\"', 'La compañera ideal para la aventura diaria del aprendizaje. Diseñada para resistir el ritmo de la vida estudiantil, la mochila \"Explorer\" combina durabilidad, comodidad y un estilo vibrante para que cada día sea una nueva expedición.', '599.00', 1, 'interno', NULL);
+(1, 'VC-SCH-001', 'Mochila Escolar \"Explorer\"', 'La compañera ideal para la aventura diaria del aprendizaje. Diseñada para resistir el ritmo de la vida estudiantil, la mochila \"Explorer\" combina durabilidad, comodidad y un estilo vibrante para que cada día sea una nueva expedición.', 599.00, 1, 'interno', NULL);
 
 -- --------------------------------------------------------
 
@@ -297,7 +297,8 @@ CREATE TABLE `usuarios` (
 --
 
 INSERT INTO `usuarios` (`id`, `nombre`, `email`, `password_hash`, `rol`, `datos_empresa`, `datos_envio`, `fecha_registro`) VALUES
-(1, 'Moisés Cuevas Palacios', 'micuevas@gmail.com', '$2y$10$LnJYvts9vVzvADJ9sWQiU.APpYu9NPHQYMTJKG9OSiyvs/9L58KZC', 'b2c_client', NULL, '[{\"id\":\"\",\"calle\":\"Av. L\\u00e1zaro C\\u00e1rdenas 204\",\"colonia\":\"Benito Ju\\u00e1rez Norte\",\"ciudad\":\"Xalapa\",\"estado\":\"Veracruz\",\"cp\":\"91070\",\"referencias\":\"Junto a una peluquer\\u00eda.\"},{\"id\":\"addr_68c61cc3101a3\",\"calle\":\"Venustiano Carranza 14\",\"colonia\":\"Barrio Tercero\",\"ciudad\":\"Tatahuicapan de Ju\\u00e1rez\",\"estado\":\"Veracruz\",\"cp\":\"95950\",\"referencias\":\"Casa verde casi frente a una capilla de la Virgen de Guadalupe.\"}]', '2025-09-14 00:24:01');
+(1, 'Moisés Cuevas Palacios', 'micuevas@gmail.com', '$2y$10$LnJYvts9vVzvADJ9sWQiU.APpYu9NPHQYMTJKG9OSiyvs/9L58KZC', 'b2c_client', NULL, '[{\"id\":\"\",\"calle\":\"Av. L\\u00e1zaro C\\u00e1rdenas 204\",\"colonia\":\"Benito Ju\\u00e1rez Norte\",\"ciudad\":\"Xalapa\",\"estado\":\"Veracruz\",\"cp\":\"91070\",\"referencias\":\"Junto a una peluquer\\u00eda.\"},{\"id\":\"addr_68c61cc3101a3\",\"calle\":\"Venustiano Carranza 14\",\"colonia\":\"Barrio Tercero\",\"ciudad\":\"Tatahuicapan de Ju\\u00e1rez\",\"estado\":\"Veracruz\",\"cp\":\"95950\",\"referencias\":\"Casa verde casi frente a una capilla de la Virgen de Guadalupe.\"}]', '2025-09-14 00:24:01'),
+(2, 'Hector Manuel Garcia Escobar', 'hmge6696@gmail.com', '$2y$10$eZoKQ9yQ2jUoy1x7R9hXk.PEUo03ZTZaT4B508D5elOIGrr4pPSQ6', 'b2c_client', NULL, '[{\"id\":\"\",\"calle\":\"Av. L\\u00e1zaro C\\u00e1rdenas 204\",\"colonia\":\"Benito Ju\\u00e1rez Norte\",\"ciudad\":\"Xalapa\",\"estado\":\"Veracruz\",\"cp\":\"91070\",\"referencias\":\"Junto a una peluquer\\u00eda.\"},{\"id\":\"addr_68c61cc3101a3\",\"calle\":\"Venustiano Carranza 14\",\"colonia\":\"Barrio Tercero\",\"ciudad\":\"Tatahuicapan de Ju\\u00e1rez\",\"estado\":\"Veracruz\",\"cp\":\"95950\",\"referencias\":\"Casa verde casi frente a una capilla de la Virgen de Guadalupe.\"}]', '2025-09-25 17:03:03');
 
 -- --------------------------------------------------------
 
@@ -319,12 +320,12 @@ CREATE TABLE `variaciones_producto` (
 --
 
 INSERT INTO `variaciones_producto` (`id`, `id_producto`, `id_color`, `url_imagen`, `stock`, `precio_adicional`) VALUES
-(1, 1, 10, 'img/mochila-escolar-verde.jpg', 50, '0.00'),
-(2, 1, 11, 'img/mochila-escolar-rojo.jpg', 45, '0.00'),
-(3, 1, 12, 'img/mochila-escolar-azul.jpg', 60, '0.00'),
-(4, 1, 13, 'img/mochila-escolar-vino.jpg', 30, '0.00'),
-(5, 1, 14, 'img/mochila-escolar-naranja.jpg', 25, '0.00'),
-(6, 1, 15, 'img/mochila-escolar-negro.jpg', 70, '0.00');
+(1, 1, 10, 'img/mochila-escolar-verde.jpg', 50, 0.00),
+(2, 1, 11, 'img/mochila-escolar-rojo.jpg', 45, 0.00),
+(3, 1, 12, 'img/mochila-escolar-azul.jpg', 60, 0.00),
+(4, 1, 13, 'img/mochila-escolar-vino.jpg', 30, 0.00),
+(5, 1, 14, 'img/mochila-escolar-naranja.jpg', 25, 0.00),
+(6, 1, 15, 'img/mochila-escolar-negro.jpg', 70, 0.00);
 
 --
 -- Índices para tablas volcadas
@@ -525,7 +526,7 @@ ALTER TABLE `proyectos_b2b`
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT de la tabla `variaciones_producto`

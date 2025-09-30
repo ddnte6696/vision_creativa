@@ -16,8 +16,8 @@ define('BASE_URL', $protocol . $host . $script_dir);
 $servername = "localhost";
 $username = "root"; // Reemplaza con tu usuario
 $password = ""; // Reemplaza con tu contraseña
-$dbname = "diginet_vision_creativa";
-// --- CONEXIÓN A LA BASE DE DATOS ---PRODUCTION*/
+$dbname = "diginet_vision_creativa";*/
+// --- CONEXIÓN A LA BASE DE DATOS ---PRODUCTION
 $servername = "localhost";
 $username = "omnibusg_vision_creativa"; // Reemplaza con tu usuario
 $password = "?^dJQCW5]wX."; // Reemplaza con tu contraseña

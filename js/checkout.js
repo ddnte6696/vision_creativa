@@ -142,6 +142,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Habilitar/deshabilitar botón de MP según el carrito
+    function updatePaymentButton() {
+        const cart = getCart();
+        const mpButton = document.getElementById('mp-checkout-btn');
+        
+        if (cart.length > 0) {
+            mpButton.disabled = false;
+            mpButton.textContent = 'Pagar con Mercado Pago';
+        } else {
+            mpButton.disabled = true;
+            mpButton.textContent = 'Agrega productos al carrito';
+        }
+    }
+
     // Renderizar resumen inicial
     renderSummary();
     
@@ -153,4 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const cart = Cart.getCart();
         placeOrderBtn.disabled = cart.length === 0 || !selectedShippingAddress;
     }
+
+    // Inicializar el botón de MP
+    updatePaymentButton();
 });

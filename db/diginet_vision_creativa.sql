@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 25-09-2025 a las 19:04:36
+-- Tiempo de generación: 30-09-2025 a las 21:19:50
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -98,6 +98,26 @@ INSERT INTO `atributos_tela` (`id`, `nombre`, `descripcion`, `url_textura`) VALU
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `carritos_abandonados`
+--
+
+CREATE TABLE `carritos_abandonados` (
+  `id` int(11) NOT NULL,
+  `usuario_id` int(11) DEFAULT NULL,
+  `preference_id` varchar(100) DEFAULT NULL,
+  `external_reference` varchar(100) DEFAULT NULL,
+  `cart_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`cart_data`)),
+  `shipping_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`shipping_data`)),
+  `total_amount` decimal(10,2) DEFAULT NULL,
+  `email_sent` tinyint(1) DEFAULT 0,
+  `recovered` tinyint(1) DEFAULT 0,
+  `expires_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `chat_mensajes`
 --
 
@@ -169,6 +189,25 @@ CREATE TABLE `crm_interacciones` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `direcciones`
+--
+
+CREATE TABLE `direcciones` (
+  `id` int(11) NOT NULL,
+  `usuario_id` int(11) NOT NULL,
+  `calle` varchar(255) NOT NULL,
+  `colonia` varchar(100) NOT NULL,
+  `ciudad` varchar(100) NOT NULL,
+  `estado` varchar(50) NOT NULL,
+  `cp` varchar(10) NOT NULL,
+  `referencias` text DEFAULT NULL,
+  `is_default` tinyint(1) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `disenos_base`
 --
 
@@ -192,6 +231,55 @@ INSERT INTO `disenos_base` (`id`, `nombre`, `descripcion`, `url_imagen_plantilla
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `mp_config`
+--
+
+CREATE TABLE `mp_config` (
+  `id` int(11) NOT NULL,
+  `environment` enum('sandbox','production') DEFAULT 'sandbox',
+  `access_token` text NOT NULL,
+  `public_key` text NOT NULL,
+  `client_id` varchar(100) DEFAULT NULL,
+  `client_secret` text DEFAULT NULL,
+  `webhook_url` text DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Volcado de datos para la tabla `mp_config`
+--
+
+INSERT INTO `mp_config` (`id`, `environment`, `access_token`, `public_key`, `client_id`, `client_secret`, `webhook_url`, `is_active`, `created_at`, `updated_at`) VALUES
+(1, 'sandbox', 'TEST-3907237835175069-042513-54392cff1eae5de032c47aa617dd5531-1773584073', 'TEST-23fa22ee-e058-41e0-96cc-2798229b16bc', NULL, NULL, 'https://omnibus-guadalajara.com/vision_creativa/api/payments/webhook.php', 1, '2025-09-30 18:44:44', '2025-09-30 18:50:09');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `mp_notifications`
+--
+
+CREATE TABLE `mp_notifications` (
+  `id` int(11) NOT NULL,
+  `payment_id` varchar(100) NOT NULL,
+  `topic` varchar(50) NOT NULL,
+  `status` varchar(50) NOT NULL,
+  `external_reference` varchar(100) DEFAULT NULL,
+  `merchant_order_id` varchar(100) DEFAULT NULL,
+  `preference_id` varchar(100) DEFAULT NULL,
+  `amount` decimal(10,2) DEFAULT NULL,
+  `currency` varchar(3) DEFAULT 'MXN',
+  `date_created` datetime DEFAULT NULL,
+  `date_approved` datetime DEFAULT NULL,
+  `raw_data` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`raw_data`)),
+  `processed` tinyint(1) DEFAULT 0,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `pedidos`
 --
 
@@ -200,10 +288,37 @@ CREATE TABLE `pedidos` (
   `id_usuario` int(11) NOT NULL,
   `tipo_pedido` enum('b2b','b2c') NOT NULL,
   `id_referencia` int(11) DEFAULT NULL,
+  `external_reference` varchar(100) DEFAULT NULL,
+  `preference_id` varchar(100) DEFAULT NULL,
+  `payment_id` varchar(100) DEFAULT NULL,
   `monto_total` decimal(12,2) NOT NULL,
-  `estado_pago` enum('pendiente','anticipo_pagado','pagado_completo','reembolsado') NOT NULL DEFAULT 'pendiente',
+  `shipping_cost` decimal(10,2) DEFAULT 0.00,
+  `tax_amount` decimal(10,2) DEFAULT 0.00,
+  `shipping_address_id` int(11) DEFAULT NULL,
+  `notes` text DEFAULT NULL,
+  `estado_pago` enum('pendiente','anticipo_pagado','pagado_completo','reembolsado','paid','failed','pending') NOT NULL DEFAULT 'pendiente',
+  `payment_method` varchar(50) DEFAULT NULL,
   `estado_envio` enum('preparando','enviado','entregado','cancelado') NOT NULL DEFAULT 'preparando',
-  `fecha_pedido` timestamp NOT NULL DEFAULT current_timestamp()
+  `fecha_pedido` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `pedido_items`
+--
+
+CREATE TABLE `pedido_items` (
+  `id` int(11) NOT NULL,
+  `pedido_id` int(11) NOT NULL,
+  `variacion_id` int(11) DEFAULT NULL,
+  `producto_nombre` varchar(255) NOT NULL,
+  `cantidad` int(11) NOT NULL,
+  `precio_unitario` decimal(10,2) NOT NULL,
+  `subtotal` decimal(10,2) NOT NULL,
+  `opciones_personalizacion` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`opciones_personalizacion`)),
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -278,6 +393,22 @@ CREATE TABLE `proyectos_b2b` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `transaction_log`
+--
+
+CREATE TABLE `transaction_log` (
+  `id` int(11) NOT NULL,
+  `external_reference` varchar(100) DEFAULT NULL,
+  `action` varchar(50) NOT NULL,
+  `details` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`details`)),
+  `ip_address` varchar(45) DEFAULT NULL,
+  `user_agent` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `usuarios`
 --
 
@@ -285,6 +416,7 @@ CREATE TABLE `usuarios` (
   `id` int(11) NOT NULL,
   `nombre` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
+  `telefono` varchar(20) DEFAULT NULL,
   `password_hash` varchar(255) NOT NULL,
   `rol` enum('admin','b2b_client','b2c_client') NOT NULL,
   `datos_empresa` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL CHECK (json_valid(`datos_empresa`)),
@@ -296,9 +428,9 @@ CREATE TABLE `usuarios` (
 -- Volcado de datos para la tabla `usuarios`
 --
 
-INSERT INTO `usuarios` (`id`, `nombre`, `email`, `password_hash`, `rol`, `datos_empresa`, `datos_envio`, `fecha_registro`) VALUES
-(1, 'Moisés Cuevas Palacios', 'micuevas@gmail.com', '$2y$10$LnJYvts9vVzvADJ9sWQiU.APpYu9NPHQYMTJKG9OSiyvs/9L58KZC', 'b2c_client', NULL, '[{\"id\":\"\",\"calle\":\"Av. L\\u00e1zaro C\\u00e1rdenas 204\",\"colonia\":\"Benito Ju\\u00e1rez Norte\",\"ciudad\":\"Xalapa\",\"estado\":\"Veracruz\",\"cp\":\"91070\",\"referencias\":\"Junto a una peluquer\\u00eda.\"},{\"id\":\"addr_68c61cc3101a3\",\"calle\":\"Venustiano Carranza 14\",\"colonia\":\"Barrio Tercero\",\"ciudad\":\"Tatahuicapan de Ju\\u00e1rez\",\"estado\":\"Veracruz\",\"cp\":\"95950\",\"referencias\":\"Casa verde casi frente a una capilla de la Virgen de Guadalupe.\"}]', '2025-09-14 00:24:01'),
-(2, 'Hector Manuel Garcia Escobar', 'hmge6696@gmail.com', '$2y$10$eZoKQ9yQ2jUoy1x7R9hXk.PEUo03ZTZaT4B508D5elOIGrr4pPSQ6', 'b2c_client', NULL, '[{\"id\":\"\",\"calle\":\"Av. L\\u00e1zaro C\\u00e1rdenas 204\",\"colonia\":\"Benito Ju\\u00e1rez Norte\",\"ciudad\":\"Xalapa\",\"estado\":\"Veracruz\",\"cp\":\"91070\",\"referencias\":\"Junto a una peluquer\\u00eda.\"},{\"id\":\"addr_68c61cc3101a3\",\"calle\":\"Venustiano Carranza 14\",\"colonia\":\"Barrio Tercero\",\"ciudad\":\"Tatahuicapan de Ju\\u00e1rez\",\"estado\":\"Veracruz\",\"cp\":\"95950\",\"referencias\":\"Casa verde casi frente a una capilla de la Virgen de Guadalupe.\"}]', '2025-09-25 17:03:03');
+INSERT INTO `usuarios` (`id`, `nombre`, `email`, `telefono`, `password_hash`, `rol`, `datos_empresa`, `datos_envio`, `fecha_registro`) VALUES
+(1, 'Moisés Cuevas Palacios', 'micuevas@gmail.com', NULL, '$2y$10$LnJYvts9vVzvADJ9sWQiU.APpYu9NPHQYMTJKG9OSiyvs/9L58KZC', 'b2c_client', NULL, '[{\"id\":\"\",\"calle\":\"Av. L\\u00e1zaro C\\u00e1rdenas 204\",\"colonia\":\"Benito Ju\\u00e1rez Norte\",\"ciudad\":\"Xalapa\",\"estado\":\"Veracruz\",\"cp\":\"91070\",\"referencias\":\"Junto a una peluquer\\u00eda.\"},{\"id\":\"addr_68c61cc3101a3\",\"calle\":\"Venustiano Carranza 14\",\"colonia\":\"Barrio Tercero\",\"ciudad\":\"Tatahuicapan de Ju\\u00e1rez\",\"estado\":\"Veracruz\",\"cp\":\"95950\",\"referencias\":\"Casa verde casi frente a una capilla de la Virgen de Guadalupe.\"}]', '2025-09-14 00:24:01'),
+(2, 'Hector Manuel Garcia Escobar', 'hmge6696@gmail.com', NULL, '$2y$10$eZoKQ9yQ2jUoy1x7R9hXk.PEUo03ZTZaT4B508D5elOIGrr4pPSQ6', 'b2c_client', NULL, '[{\"id\":\"\",\"calle\":\"Av. L\\u00e1zaro C\\u00e1rdenas 204\",\"colonia\":\"Benito Ju\\u00e1rez Norte\",\"ciudad\":\"Xalapa\",\"estado\":\"Veracruz\",\"cp\":\"91070\",\"referencias\":\"Junto a una peluquer\\u00eda.\"},{\"id\":\"addr_68c61cc3101a3\",\"calle\":\"Venustiano Carranza 14\",\"colonia\":\"Barrio Tercero\",\"ciudad\":\"Tatahuicapan de Ju\\u00e1rez\",\"estado\":\"Veracruz\",\"cp\":\"95950\",\"referencias\":\"Casa verde casi frente a una capilla de la Virgen de Guadalupe.\"}]', '2025-09-25 17:03:03');
 
 -- --------------------------------------------------------
 
@@ -327,6 +459,51 @@ INSERT INTO `variaciones_producto` (`id`, `id_producto`, `id_color`, `url_imagen
 (5, 1, 14, 'img/mochila-escolar-naranja.jpg', 25, 0.00),
 (6, 1, 15, 'img/mochila-escolar-negro.jpg', 70, 0.00);
 
+-- --------------------------------------------------------
+
+--
+-- Estructura Stand-in para la vista `v_pedidos_completos`
+-- (Véase abajo para la vista actual)
+--
+CREATE TABLE `v_pedidos_completos` (
+`id` int(11)
+,`id_usuario` int(11)
+,`tipo_pedido` enum('b2b','b2c')
+,`id_referencia` int(11)
+,`external_reference` varchar(100)
+,`preference_id` varchar(100)
+,`payment_id` varchar(100)
+,`monto_total` decimal(12,2)
+,`shipping_cost` decimal(10,2)
+,`tax_amount` decimal(10,2)
+,`shipping_address_id` int(11)
+,`notes` text
+,`estado_pago` enum('pendiente','anticipo_pagado','pagado_completo','reembolsado','paid','failed','pending')
+,`payment_method` varchar(50)
+,`estado_envio` enum('preparando','enviado','entregado','cancelado')
+,`fecha_pedido` timestamp
+,`updated_at` timestamp
+,`cliente_nombre` varchar(255)
+,`cliente_email` varchar(255)
+,`cliente_telefono` varchar(20)
+,`calle` varchar(255)
+,`colonia` varchar(100)
+,`ciudad` varchar(100)
+,`estado` varchar(50)
+,`cp` varchar(10)
+,`total_items` bigint(21)
+,`productos` mediumtext
+);
+
+-- --------------------------------------------------------
+
+--
+-- Estructura para la vista `v_pedidos_completos`
+--
+DROP TABLE IF EXISTS `v_pedidos_completos`;
+
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `v_pedidos_completos`  AS SELECT `p`.`id` AS `id`, `p`.`id_usuario` AS `id_usuario`, `p`.`tipo_pedido` AS `tipo_pedido`, `p`.`id_referencia` AS `id_referencia`, `p`.`external_reference` AS `external_reference`, `p`.`preference_id` AS `preference_id`, `p`.`payment_id` AS `payment_id`, `p`.`monto_total` AS `monto_total`, `p`.`shipping_cost` AS `shipping_cost`, `p`.`tax_amount` AS `tax_amount`, `p`.`shipping_address_id` AS `shipping_address_id`, `p`.`notes` AS `notes`, `p`.`estado_pago` AS `estado_pago`, `p`.`payment_method` AS `payment_method`, `p`.`estado_envio` AS `estado_envio`, `p`.`fecha_pedido` AS `fecha_pedido`, `p`.`updated_at` AS `updated_at`, `u`.`nombre` AS `cliente_nombre`, `u`.`email` AS `cliente_email`, `u`.`telefono` AS `cliente_telefono`, `d`.`calle` AS `calle`, `d`.`colonia` AS `colonia`, `d`.`ciudad` AS `ciudad`, `d`.`estado` AS `estado`, `d`.`cp` AS `cp`, count(`pi`.`id`) AS `total_items`, group_concat(`pi`.`producto_nombre` separator ', ') AS `productos` FROM (((`pedidos` `p` left join `usuarios` `u` on(`p`.`id_usuario` = `u`.`id`)) left join `direcciones` `d` on(`p`.`shipping_address_id` = `d`.`id`)) left join `pedido_items` `pi` on(`p`.`id` = `pi`.`pedido_id`)) GROUP BY `p`.`id` ;
+
 --
 -- Índices para tablas volcadas
 --
@@ -350,6 +527,17 @@ ALTER TABLE `atributos_spec`
 --
 ALTER TABLE `atributos_tela`
   ADD PRIMARY KEY (`id`);
+
+--
+-- Indices de la tabla `carritos_abandonados`
+--
+ALTER TABLE `carritos_abandonados`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_usuario_id` (`usuario_id`),
+  ADD KEY `idx_preference_id` (`preference_id`),
+  ADD KEY `idx_external_reference` (`external_reference`),
+  ADD KEY `idx_recovered` (`recovered`),
+  ADD KEY `idx_expires_at` (`expires_at`);
 
 --
 -- Indices de la tabla `chat_mensajes`
@@ -390,17 +578,54 @@ ALTER TABLE `crm_interacciones`
   ADD KEY `idx_crm_usuario` (`id_usuario`);
 
 --
+-- Indices de la tabla `direcciones`
+--
+ALTER TABLE `direcciones`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_usuario_id` (`usuario_id`);
+
+--
 -- Indices de la tabla `disenos_base`
 --
 ALTER TABLE `disenos_base`
   ADD PRIMARY KEY (`id`);
 
 --
+-- Indices de la tabla `mp_config`
+--
+ALTER TABLE `mp_config`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indices de la tabla `mp_notifications`
+--
+ALTER TABLE `mp_notifications`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_payment_id` (`payment_id`),
+  ADD KEY `idx_external_reference` (`external_reference`),
+  ADD KEY `idx_status` (`status`),
+  ADD KEY `idx_processed` (`processed`),
+  ADD KEY `idx_created_at` (`created_at`);
+
+--
 -- Indices de la tabla `pedidos`
 --
 ALTER TABLE `pedidos`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `idx_id_usuario_pedido` (`id_usuario`);
+  ADD UNIQUE KEY `external_reference` (`external_reference`),
+  ADD KEY `idx_id_usuario_pedido` (`id_usuario`),
+  ADD KEY `idx_external_reference` (`external_reference`),
+  ADD KEY `idx_payment_id` (`payment_id`),
+  ADD KEY `idx_preference_id` (`preference_id`),
+  ADD KEY `shipping_address_id` (`shipping_address_id`);
+
+--
+-- Indices de la tabla `pedido_items`
+--
+ALTER TABLE `pedido_items`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_pedido_id` (`pedido_id`),
+  ADD KEY `idx_variacion_id` (`variacion_id`);
 
 --
 -- Indices de la tabla `productos`
@@ -424,6 +649,15 @@ ALTER TABLE `producto_specs`
 ALTER TABLE `proyectos_b2b`
   ADD PRIMARY KEY (`id`),
   ADD KEY `idx_id_cliente_b2b` (`id_cliente_b2b`);
+
+--
+-- Indices de la tabla `transaction_log`
+--
+ALTER TABLE `transaction_log`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_external_reference` (`external_reference`),
+  ADD KEY `idx_action` (`action`),
+  ADD KEY `idx_created_at` (`created_at`);
 
 --
 -- Indices de la tabla `usuarios`
@@ -463,6 +697,12 @@ ALTER TABLE `atributos_tela`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
+-- AUTO_INCREMENT de la tabla `carritos_abandonados`
+--
+ALTER TABLE `carritos_abandonados`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `chat_mensajes`
 --
 ALTER TABLE `chat_mensajes`
@@ -493,15 +733,39 @@ ALTER TABLE `crm_interacciones`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de la tabla `direcciones`
+--
+ALTER TABLE `direcciones`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `disenos_base`
 --
 ALTER TABLE `disenos_base`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
+-- AUTO_INCREMENT de la tabla `mp_config`
+--
+ALTER TABLE `mp_config`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+
+--
+-- AUTO_INCREMENT de la tabla `mp_notifications`
+--
+ALTER TABLE `mp_notifications`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `pedidos`
 --
 ALTER TABLE `pedidos`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `pedido_items`
+--
+ALTER TABLE `pedido_items`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -523,6 +787,12 @@ ALTER TABLE `proyectos_b2b`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de la tabla `transaction_log`
+--
+ALTER TABLE `transaction_log`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `usuarios`
 --
 ALTER TABLE `usuarios`
@@ -539,6 +809,12 @@ ALTER TABLE `variaciones_producto`
 --
 
 --
+-- Filtros para la tabla `carritos_abandonados`
+--
+ALTER TABLE `carritos_abandonados`
+  ADD CONSTRAINT `carritos_abandonados_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE;
+
+--
 -- Filtros para la tabla `configuracion_proyecto_b2b`
 --
 ALTER TABLE `configuracion_proyecto_b2b`
@@ -546,6 +822,25 @@ ALTER TABLE `configuracion_proyecto_b2b`
   ADD CONSTRAINT `fk_config_diseno` FOREIGN KEY (`id_diseno_base`) REFERENCES `disenos_base` (`id`),
   ADD CONSTRAINT `fk_config_proyecto` FOREIGN KEY (`id_proyecto_b2b`) REFERENCES `proyectos_b2b` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `fk_config_tela` FOREIGN KEY (`id_tela`) REFERENCES `atributos_tela` (`id`);
+
+--
+-- Filtros para la tabla `direcciones`
+--
+ALTER TABLE `direcciones`
+  ADD CONSTRAINT `direcciones_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `pedidos`
+--
+ALTER TABLE `pedidos`
+  ADD CONSTRAINT `pedidos_ibfk_1` FOREIGN KEY (`shipping_address_id`) REFERENCES `direcciones` (`id`) ON DELETE SET NULL;
+
+--
+-- Filtros para la tabla `pedido_items`
+--
+ALTER TABLE `pedido_items`
+  ADD CONSTRAINT `pedido_items_ibfk_1` FOREIGN KEY (`pedido_id`) REFERENCES `pedidos` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `pedido_items_ibfk_2` FOREIGN KEY (`variacion_id`) REFERENCES `variaciones_producto` (`id`) ON DELETE SET NULL;
 
 --
 -- Filtros para la tabla `productos`

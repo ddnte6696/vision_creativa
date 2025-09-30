@@ -1,5 +1,4 @@
-﻿// js/checkout.js - Lógica para la página de Checkout (Versión actualizada con Mercado Pago)
-
+﻿// js/checkout.js - Actualizado con integración de Mercado Pago
 document.addEventListener('DOMContentLoaded', () => {
     const summaryCartItemsEl = document.getElementById('summary-cart-items');
     const summaryTotalsEl = document.getElementById('summary-totals');
@@ -24,54 +23,40 @@ document.addEventListener('DOMContentLoaded', () => {
             const subtotal = item.price * item.quantity;
             total += subtotal;
             
-            html += 
+            html += `
                 <div class="summary-item">
                     <img src="${item.image}" alt="${item.productName}" class="item-image">
                     <div class="summary-item-details">
                         <p class="item-name"><strong>${item.productName}</strong></p>
                         <p class="item-quantity">Cantidad: ${item.quantity}  $${item.price.toFixed(2)}</p>
-                        ${item.selectedOptions ? <p class="item-options">${item.selectedOptions}</p> : ''}
+                        ${item.selectedOptions ? `<p class="item-options">${item.selectedOptions}</p>` : ''}
                     </div>
                     <div class="summary-item-total">$${subtotal.toFixed(2)}</div>
                 </div>
-            ;
+            `;
         });
 
         summaryCartItemsEl.innerHTML = html;
         
-        // Calcular costos adicionales
-        const shipping = 0; // Envío gratis por ahora
-        const tax = 0; // Sin impuestos por ahora
+        const shipping = 0;
+        const tax = 0;
         const finalTotal = total + shipping + tax;
 
-        summaryTotalsEl.innerHTML = 
+        summaryTotalsEl.innerHTML = `
             <div class="summary-row">
                 <span>Subtotal:</span>
                 <span>$${total.toFixed(2)}</span>
             </div>
-            ${shipping > 0 ? 
-            <div class="summary-row">
-                <span>Envío:</span>
-                <span>$${shipping.toFixed(2)}</span>
-            </div>
-             : 
             <div class="summary-row">
                 <span>Envío:</span>
                 <span class="free-shipping">Gratis</span>
             </div>
-            }
-            ${tax > 0 ? 
-            <div class="summary-row">
-                <span>Impuestos:</span>
-                <span>$${tax.toFixed(2)}</span>
-            </div>
-             : ''}
             <hr>
             <div class="summary-row total">
                 <span><strong>Total:</strong></span>
                 <span><strong>$${finalTotal.toFixed(2)}</strong></span>
             </div>
-        ;
+        `;
     }
 
     // Manejar selección de dirección de envío
@@ -81,9 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const addresses = JSON.parse(e.target.dataset.addresses || '[]');
                 selectedShippingAddress = addresses[e.target.value];
                 
-                console.log('Selected shipping address:', selectedShippingAddress);
-                
-                // Habilitar botón de pago si hay dirección seleccionada y carrito no vacío
                 if (placeOrderBtn) {
                     const cart = Cart.getCart();
                     placeOrderBtn.disabled = !selectedShippingAddress || cart.length === 0;
@@ -96,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Manejar click del botón de realizar pedido
+    // Manejar click del botón de pagar con Mercado Pago
     if (placeOrderBtn) {
         placeOrderBtn.addEventListener('click', async (e) => {
             e.preventDefault();
@@ -113,18 +95,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Deshabilitar botón y mostrar loading
+            // Mostrar loading
             placeOrderBtn.disabled = true;
             const originalText = placeOrderBtn.textContent;
             placeOrderBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
 
             try {
-                console.log('Creating payment preference...', {
-                    cartItems: cart,
-                    shippingAddress: selectedShippingAddress
-                });
-
-                const response = await fetch(${baseURL}api/payments/create_preference.php, {
+                const response = await fetch('https://omnibus-guadalajara.com/vision_creativa/api/payments/create_preference.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -137,31 +114,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 if (!response.ok) {
-                    throw new Error(HTTP error! status: );
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
                 const result = await response.json();
-                console.log('Payment preference result:', result);
 
                 if (result.success) {
-                    // Guardar referencia del pago
-                    sessionStorage.setItem('payment_reference', result.external_reference);
-                    
-                    // Mostrar mensaje de éxito
                     App.showToast('Redirigiendo a Mercado Pago...', 'success');
                     
-                    // Redirigir a Mercado Pago después de un breve delay
+                    // Redirigir a Mercado Pago
                     setTimeout(() => {
                         window.location.href = result.checkout_url;
                     }, 1000);
                     
                 } else {
-                    throw new Error(result.error || 'Error desconocido al procesar el pago');
+                    throw new Error(result.error || 'Error desconocido');
                 }
 
             } catch (error) {
                 console.error('Payment error:', error);
-                App.showToast(Error: , 'error');
+                App.showToast(`Error: ${error.message}`, 'error');
                 
                 // Restaurar botón
                 placeOrderBtn.disabled = false;
@@ -176,10 +148,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Escuchar cambios en el carrito
     document.addEventListener('cartUpdated', renderSummary);
     
-    // Verificar estado inicial del botón
+    // Estado inicial del botón
     if (placeOrderBtn) {
         const cart = Cart.getCart();
         placeOrderBtn.disabled = cart.length === 0 || !selectedShippingAddress;
     }
 });
-

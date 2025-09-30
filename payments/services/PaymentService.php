@@ -1,28 +1,29 @@
 ﻿<?php
-// lib/payments/PaymentService.php - Actualizado para la estructura existente
+// payments/services/PaymentService.php - Fusionado con mejoras de Mercado Pago
 require_once __DIR__ . '/../../db_config.php';
-require_once __DIR__ . '/config.php';
 
 class PaymentService {
-    private $db;  
+    private $conn;
     private $accessToken;
     private $publicKey;
     
     public function __construct() {
-        $this->db = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+        // Conectar usando db_config.php existente
+        $this->conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
         
-        if ($this->db->connect_error) {
-            throw new Exception('Database connection failed: ' . $this->db->connect_error);
+        if ($this->conn->connect_error) {
+            throw new Exception('Database connection failed: ' . $this->conn->connect_error);
         }
         
-        $this->db->set_charset('utf8mb4');
+        $this->conn->set_charset('utf8mb4');
         $this->loadMercadoPagoConfig();
     }
     
+    /**
+     * Cargar configuración de Mercado Pago desde base de datos
+     */
     private function loadMercadoPagoConfig() {
-        $stmt = $this->db->prepare("SELECT access_token, public_key FROM mp_config WHERE is_active = 1 AND environment = ? LIMIT 1");
-        $environment = defined('MP_ENVIRONMENT') ? MP_ENVIRONMENT : 'sandbox';
-        $stmt->bind_param("s", $environment);
+        $stmt = $this->conn->prepare("SELECT access_token, public_key FROM mp_config WHERE is_active = 1 AND environment = 'sandbox' LIMIT 1");
         $stmt->execute();
         $result = $stmt->get_result();
         
@@ -30,21 +31,20 @@ class PaymentService {
             $this->accessToken = $config['access_token'];
             $this->publicKey = $config['public_key'];
         } else {
-            $this->accessToken = getMercadoPagoToken();
-            $this->publicKey = getMercadoPagoPublicKey();
+            throw new Exception('Configuración de Mercado Pago no encontrada');
         }
         
         $stmt->close();
     }
     
     /**
-     * Crear preferencia de pago para Vision Creativa
+     * Crear preferencia de pago para carrito
      */
     public function createPreference($cartItems, $userInfo, $shippingAddress, $orderType = 'b2c') {
         try {
             // Validar datos de entrada
             if (empty($cartItems) || empty($userInfo) || empty($shippingAddress)) {
-                throw new Exception('Datos incompletos para crear la preferencia');
+                throw new Exception('Datos incompletos para crear preferencia');
             }
             
             // Formatear items para Mercado Pago
@@ -54,7 +54,6 @@ class PaymentService {
             foreach ($cartItems as $item) {
                 $unitPrice = floatval($item['price']);
                 $quantity = intval($item['quantity']);
-                $subtotal = $unitPrice * $quantity;
                 
                 $items[] = [
                     'id' => strval($item['variacionId']),
@@ -65,11 +64,11 @@ class PaymentService {
                     'currency_id' => 'MXN'
                 ];
                 
-                $totalAmount += $subtotal;
+                $totalAmount += $unitPrice * $quantity;
             }
             
             // Generar referencia externa única
-            $externalReference = $this->generateExternalReference();
+            $externalReference = 'VC-' . date('YmdHis') . '-' . uniqid();
             
             // Datos de la preferencia
             $preferenceData = [
@@ -83,18 +82,14 @@ class PaymentService {
                     ]
                 ],
                 'external_reference' => $externalReference,
-                'notification_url' => MP_WEBHOOK_URL,
+                'notification_url' => 'https://omnibus-guadalajara.com/vision_creativa/api/payments/webhook.php',
                 'back_urls' => [
-                    'success' => MP_SUCCESS_URL . "?external_reference={$externalReference}",
-                    'failure' => MP_FAILURE_URL . "?external_reference={$externalReference}",
-                    'pending' => MP_PENDING_URL . "?external_reference={$externalReference}"
+                    'success' => 'https://omnibus-guadalajara.com/vision_creativa/public/payment_success.php?ref=' . $externalReference,
+                    'failure' => 'https://omnibus-guadalajara.com/vision_creativa/public/payment_failure.php?ref=' . $externalReference,
+                    'pending' => 'https://omnibus-guadalajara.com/vision_creativa/public/payment_pending.php?ref=' . $externalReference
                 ],
                 'auto_return' => 'approved',
                 'payment_methods' => [
-                    'excluded_payment_types' => [
-                        // Excluir pagos en efectivo si no los quieres
-                        // ['id' => 'ticket']
-                    ],
                     'installments' => 12,
                     'default_installments' => 1
                 ],
@@ -102,8 +97,7 @@ class PaymentService {
                 'metadata' => [
                     'user_id' => $userInfo['id'],
                     'order_type' => $orderType,
-                    'shipping_address_id' => $shippingAddress['id'] ?? null,
-                    'total_items' => count($cartItems)
+                    'shipping_address_id' => $shippingAddress['id'] ?? null
                 ]
             ];
             
@@ -111,29 +105,29 @@ class PaymentService {
             $response = $this->makeApiRequest('POST', 'checkout/preferences', $preferenceData);
             
             if ($response && isset($response['init_point'])) {
-                // Guardar carrito abandonado para tracking/recovery
+                // Guardar carrito para recovery
                 $this->saveAbandonedCart($userInfo['id'], $response['id'], $externalReference, $cartItems, $shippingAddress, $totalAmount);
                 
-                // Log de la transacción
+                // Log de transacción
                 $this->logTransaction($externalReference, 'preference_created', [
                     'preference_id' => $response['id'],
                     'total_amount' => $totalAmount,
-                    'items_count' => count($cartItems)
+                    'user_id' => $userInfo['id']
                 ]);
                 
                 return $response;
             }
             
-            throw new Exception('No se pudo crear la preferencia de pago');
+            throw new Exception('Error al crear preferencia de Mercado Pago');
             
         } catch (Exception $e) {
-            error_log("Error creating MP preference: " . $e->getMessage());
+            error_log("PaymentService Error: " . $e->getMessage());
             return false;
         }
     }
     
     /**
-     * Obtener detalles de un pago desde Mercado Pago
+     * Obtener detalles de pago desde Mercado Pago
      */
     public function getPaymentDetails($paymentId) {
         try {
@@ -145,19 +139,18 @@ class PaymentService {
     }
     
     /**
-     * Procesar notificación de webhook
+     * Procesar webhook de Mercado Pago
      */
-    public function processWebhookNotification($notificationData) {
+    public function processWebhook($data) {
         try {
-            // Guardar notificación raw
-            $this->saveNotification($notificationData);
+            // Guardar notificación
+            $this->saveNotification($data);
             
-            if (isset($notificationData['data']['id'])) {
-                $paymentId = $notificationData['data']['id'];
+            if (isset($data['data']['id'])) {
+                $paymentId = $data['data']['id'];
                 $paymentDetails = $this->getPaymentDetails($paymentId);
                 
                 if ($paymentDetails) {
-                    // Procesar según el estado
                     switch ($paymentDetails['status']) {
                         case 'approved':
                             return $this->processApprovedPayment($paymentDetails);
@@ -166,16 +159,13 @@ class PaymentService {
                         case 'rejected':
                         case 'cancelled':
                             return $this->processRejectedPayment($paymentDetails);
-                        default:
-                            $this->logTransaction($paymentDetails['external_reference'] ?? '', 'unknown_status', $paymentDetails);
-                            return true;
                     }
                 }
             }
             
-            return false;
+            return true;
         } catch (Exception $e) {
-            error_log("Error processing webhook: " . $e->getMessage());
+            error_log("Webhook processing error: " . $e->getMessage());
             return false;
         }
     }
@@ -186,32 +176,32 @@ class PaymentService {
     private function processApprovedPayment($paymentDetails) {
         try {
             $externalRef = $paymentDetails['external_reference'];
-            $paymentId = $paymentDetails['id'];
-            $amount = $paymentDetails['transaction_amount'];
             
             // Verificar si el pedido ya existe
-            $stmt = $this->db->prepare("SELECT id FROM pedidos WHERE external_reference = ?");
+            $stmt = $this->conn->prepare("SELECT id FROM pedidos WHERE external_reference = ?");
             $stmt->bind_param("s", $externalRef);
             $stmt->execute();
             $result = $stmt->get_result();
             
-            if ($result->num_rows > 0) {
-                // Pedido ya existe, solo actualizar
-                $pedido = $result->fetch_assoc();
-                $this->updateOrderPaymentStatus($pedido['id'], 'paid', $paymentId);
-            } else {
+            if ($result->num_rows === 0) {
                 // Crear nuevo pedido
-                $this->createOrderFromPayment($paymentDetails);
+                $orderId = $this->createOrderFromPayment($paymentDetails);
+                
+                // Marcar carrito como recuperado
+                $stmt = $this->conn->prepare("UPDATE carritos_abandonados SET recovered = 1 WHERE external_reference = ?");
+                $stmt->bind_param("s", $externalRef);
+                $stmt->execute();
+                $stmt->close();
+            } else {
+                // Actualizar pedido existente
+                $order = $result->fetch_assoc();
+                $stmt = $this->conn->prepare("UPDATE pedidos SET payment_id = ?, estado_pago = 'paid' WHERE id = ?");
+                $stmt->bind_param("si", $paymentDetails['id'], $order['id']);
+                $stmt->execute();
+                $stmt->close();
             }
             
-            // Marcar carrito como recuperado
-            $this->markCartAsRecovered($externalRef);
-            
-            $this->logTransaction($externalRef, 'payment_approved', [
-                'payment_id' => $paymentId,
-                'amount' => $amount
-            ]);
-            
+            $this->logTransaction($externalRef, 'payment_approved', $paymentDetails);
             return true;
             
         } catch (Exception $e) {
@@ -221,130 +211,64 @@ class PaymentService {
     }
     
     /**
-     * Crear pedido desde pago aprobado - Compatible con estructura existente
+     * Crear pedido desde pago aprobado
      */
     private function createOrderFromPayment($paymentDetails) {
-        try {
-            $externalRef = $paymentDetails['external_reference'];
-            
-            // Obtener datos del carrito abandonado
-            $stmt = $this->db->prepare("SELECT * FROM carritos_abandonados WHERE external_reference = ? AND recovered = 0");
-            $stmt->bind_param("s", $externalRef);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $cartData = $result->fetch_assoc();
-            $stmt->close();
-            
-            if (!$cartData) {
-                throw new Exception("No se encontraron datos del carrito para: " . $externalRef);
-            }
-            
-            $cartItems = json_decode($cartData['cart_data'], true);
-            $shippingData = json_decode($cartData['shipping_data'], true);
-            
-            // Crear pedido usando la estructura existente pero con campos nuevos
-            $stmt = $this->db->prepare("
-                INSERT INTO pedidos (
-                    id_usuario, tipo_pedido, external_reference, preference_id, payment_id,
-                    monto_total, estado_pago, estado_envio, payment_method, 
-                    shipping_address_id, fecha_pedido
-                ) VALUES (?, 'b2c', ?, ?, ?, ?, 'paid', 'preparando', ?, ?, NOW())
+        // Obtener datos del carrito abandonado
+        $stmt = $this->conn->prepare("SELECT * FROM carritos_abandonados WHERE external_reference = ?");
+        $stmt->bind_param("s", $paymentDetails['external_reference']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $cartData = $result->fetch_assoc();
+        $stmt->close();
+        
+        if (!$cartData) {
+            throw new Exception("Datos de carrito no encontrados");
+        }
+        
+        // Crear pedido
+        $stmt = $this->conn->prepare("
+            INSERT INTO pedidos (
+                id_usuario, tipo_pedido, external_reference, preference_id, payment_id,
+                monto_total, estado_pago, estado_envio, payment_method, 
+                shipping_address_id, fecha_pedido
+            ) VALUES (?, 'b2c', ?, ?, ?, ?, 'paid', 'preparando', ?, ?, NOW())
+        ");
+        
+        $paymentMethod = $paymentDetails['payment_type_id'] ?? 'credit_card';
+        $shippingData = json_decode($cartData['shipping_data'], true);
+        
+        $stmt->bind_param("isssdsi",
+            $cartData['usuario_id'],
+            $paymentDetails['external_reference'],
+            $cartData['preference_id'],
+            $paymentDetails['transaction_amount'],
+            $paymentMethod,
+            $shippingData['id'] ?? null
+        );
+        
+        $stmt->execute();
+        $orderId = $this->conn->insert_id;
+        $stmt->close();
+        
+        // Crear items del pedido
+        $cartItems = json_decode($cartData['cart_data'], true);
+        foreach ($cartItems as $item) {
+            $stmt = $this->conn->prepare("
+                INSERT INTO pedido_items (pedido_id, variacion_id, producto_nombre, cantidad, precio_unitario, subtotal)
+                VALUES (?, ?, ?, ?, ?, ?)
             ");
             
-            $paymentMethod = $paymentDetails['payment_type_id'] ?? 'credit_card';
-            $shippingAddressId = $this->getOrCreateShippingAddress($cartData['usuario_id'], $shippingData);
-            
-            $stmt->bind_param("isssdsii", 
-                $cartData['usuario_id'],
-                $externalRef,
-                $cartData['preference_id'],
-                $paymentDetails['id'],
-                $paymentDetails['transaction_amount'],
-                $paymentMethod,
-                $shippingAddressId
-            );
-            
+            $subtotal = $item['price'] * $item['quantity'];
+            $stmt->bind_param("iisaid", $orderId, $item['variacionId'], $item['productName'], $item['quantity'], $item['price'], $subtotal);
             $stmt->execute();
-            $pedidoId = $this->db->insert_id;
             $stmt->close();
-            
-            // Crear items del pedido
-            foreach ($cartItems as $item) {
-                $this->createOrderItem($pedidoId, $item);
-            }
-            
-            return $pedidoId;
-            
-        } catch (Exception $e) {
-            error_log("Error creating order from payment: " . $e->getMessage());
-            throw $e;
-        }
-    }
-    
-    /**
-     * Obtener o crear dirección de envío
-     */
-    private function getOrCreateShippingAddress($usuarioId, $shippingData) {
-        if (isset($shippingData['id']) && !empty($shippingData['id'])) {
-            return $shippingData['id'];
         }
         
-        // Crear nueva dirección
-        $stmt = $this->db->prepare("
-            INSERT INTO direcciones (usuario_id, calle, colonia, ciudad, estado, cp, referencias)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        ");
-        
-        $stmt->bind_param("issssss",
-            $usuarioId,
-            $shippingData['calle'],
-            $shippingData['colonia'],
-            $shippingData['ciudad'],
-            $shippingData['estado'],
-            $shippingData['cp'],
-            $shippingData['referencias'] ?? ''
-        );
-        
-        $stmt->execute();
-        $addressId = $this->db->insert_id;
-        $stmt->close();
-        
-        return $addressId;
+        return $orderId;
     }
     
-    /**
-     * Crear item de pedido
-     */
-    private function createOrderItem($pedidoId, $item) {
-        $stmt = $this->db->prepare("
-            INSERT INTO pedido_items (
-                pedido_id, variacion_id, producto_nombre, cantidad, 
-                precio_unitario, subtotal, opciones_personalizacion
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        ");
-        
-        $subtotal = $item['price'] * $item['quantity'];
-        $opciones = json_encode($item['selectedOptions'] ?? []);
-        
-        $stmt->bind_param("iisidds",
-            $pedidoId,
-            $item['variacionId'],
-            $item['productName'],
-            $item['quantity'],
-            $item['price'],
-            $subtotal,
-            $opciones
-        );
-        
-        $stmt->execute();
-        $stmt->close();
-    }
-    
-    // Métodos auxiliares...
-    private function generateExternalReference() {
-        return 'VC-' . date('YmdHis') . '-' . uniqid();
-    }
-    
+    // Métodos auxiliares
     private function makeApiRequest($method, $endpoint, $data = null) {
         $url = "https://api.mercadopago.com/{$endpoint}";
         
@@ -367,12 +291,7 @@ class PaymentService {
         
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
         curl_close($ch);
-        
-        if ($error) {
-            throw new Exception("cURL Error: " . $error);
-        }
         
         if ($httpCode >= 200 && $httpCode < 300) {
             return json_decode($response, true);
@@ -382,11 +301,9 @@ class PaymentService {
     }
     
     private function saveAbandonedCart($userId, $preferenceId, $externalRef, $cartItems, $shippingData, $totalAmount) {
-        $stmt = $this->db->prepare("
-            INSERT INTO carritos_abandonados (
-                usuario_id, preference_id, external_reference, cart_data, 
-                shipping_data, total_amount, expires_at
-            ) VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))
+        $stmt = $this->conn->prepare("
+            INSERT INTO carritos_abandonados (usuario_id, preference_id, external_reference, cart_data, shipping_data, total_amount, expires_at)
+            VALUES (?, ?, ?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 24 HOUR))
         ");
         
         $cartJson = json_encode($cartItems);
@@ -398,63 +315,41 @@ class PaymentService {
     }
     
     private function logTransaction($externalRef, $action, $details) {
-        $stmt = $this->db->prepare("
-            INSERT INTO transaction_log (external_reference, action, details, ip_address, user_agent) 
-            VALUES (?, ?, ?, ?, ?)
+        $stmt = $this->conn->prepare("
+            INSERT INTO transaction_log (external_reference, action, details, ip_address)
+            VALUES (?, ?, ?, ?)
         ");
         
         $detailsJson = json_encode($details);
         $ipAddress = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
-        $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
         
-        $stmt->bind_param("sssss", $externalRef, $action, $detailsJson, $ipAddress, $userAgent);
+        $stmt->bind_param("ssss", $externalRef, $action, $detailsJson, $ipAddress);
         $stmt->execute();
         $stmt->close();
     }
     
     private function saveNotification($data) {
-        // Implementar guardado de notificación raw
-        $stmt = $this->db->prepare("
-            INSERT INTO mp_notifications (
-                payment_id, topic, status, external_reference, 
-                preference_id, amount, raw_data
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        $stmt = $this->conn->prepare("
+            INSERT INTO mp_notifications (payment_id, topic, status, external_reference, raw_data)
+            VALUES (?, ?, 'received', '', ?)
         ");
         
         $paymentId = $data['data']['id'] ?? '';
         $topic = $data['type'] ?? '';
-        $status = 'received';
-        $externalRef = '';
-        $preferenceId = '';
-        $amount = 0;
         $rawData = json_encode($data);
         
-        $stmt->bind_param("sssssds", $paymentId, $topic, $status, $externalRef, $preferenceId, $amount, $rawData);
-        $stmt->execute();
-        $stmt->close();
-    }
-    
-    private function markCartAsRecovered($externalRef) {
-        $stmt = $this->db->prepare("UPDATE carritos_abandonados SET recovered = 1 WHERE external_reference = ?");
-        $stmt->bind_param("s", $externalRef);
-        $stmt->execute();
-        $stmt->close();
-    }
-    
-    private function updateOrderPaymentStatus($orderId, $status, $paymentId) {
-        $stmt = $this->db->prepare("UPDATE pedidos SET payment_status = ?, payment_id = ? WHERE id = ?");
-        $stmt->bind_param("ssi", $status, $paymentId, $orderId);
+        $stmt->bind_param("sss", $paymentId, $topic, $rawData);
         $stmt->execute();
         $stmt->close();
     }
     
     private function processPendingPayment($paymentDetails) {
-        // Implementar lógica para pagos pendientes
+        $this->logTransaction($paymentDetails['external_reference'] ?? '', 'payment_pending', $paymentDetails);
         return true;
     }
     
     private function processRejectedPayment($paymentDetails) {
-        // Implementar lógica para pagos rechazados
+        $this->logTransaction($paymentDetails['external_reference'] ?? '', 'payment_rejected', $paymentDetails);
         return true;
     }
 }

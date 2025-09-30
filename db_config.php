@@ -12,11 +12,16 @@ $script_dir = str_replace(basename($_SERVER['SCRIPT_NAME']), '', $_SERVER['SCRIP
 define('BASE_URL', $protocol . $host . $script_dir);
 
 
-// --- CONEXIÓN A LA BASE DE DATOS ---
+/*// --- CONEXIÓN A LA BASE DE DATOS ---SANDBOX
 $servername = "localhost";
 $username = "root"; // Reemplaza con tu usuario
 $password = ""; // Reemplaza con tu contraseña
 $dbname = "diginet_vision_creativa";
+// --- CONEXIÓN A LA BASE DE DATOS ---PRODUCTION*/
+$servername = "localhost";
+$username = "omnibusg_vision_creativa"; // Reemplaza con tu usuario
+$password = "?^dJQCW5]wX."; // Reemplaza con tu contraseña
+$dbname = "omnibusg_vision_creativa";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 

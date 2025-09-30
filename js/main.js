@@ -1,20 +1,20 @@
-// js/main.js - Lógica para la interfaz principal y funciones globales (VERSIÓN UNIFICADA Y CORRECTA)
+﻿// js/main.js - LÃ³gica para la interfaz principal y funciones globales (VERSIÃ“N UNIFICADA Y CORRECTA)
 
 // =================================================================
-// 1. DEFINICIÓN DE NUESTRA CAJA DE HERRAMIENTAS GLOBAL (`App`)
-// Se define fuera del DOMContentLoaded para que esté disponible inmediatamente.
+// 1. DEFINICIÃ“N DE NUESTRA CAJA DE HERRAMIENTAS GLOBAL (`App`)
+// Se define fuera del DOMContentLoaded para que estÃ© disponible inmediatamente.
 // =================================================================
 const App = {};
 
 /**
- * Muestra una notificación "toast" no intrusiva con la configuración correcta.
+ * Muestra una notificaciÃ³n "toast" no intrusiva con la configuraciÃ³n correcta.
  * @param {string} title - El mensaje principal a mostrar.
  * @param {string} icon - El tipo de icono ('success', 'error', 'warning', 'info', 'question').
  */
 App.showToast = function(title, icon = 'success') {
     // Verificamos si Swal existe antes de usarlo, por si acaso.
     if (typeof Swal === 'undefined') {
-        console.error('SweetAlert2 no está cargado. No se puede mostrar el toast.');
+        console.error('SweetAlert2 no estÃ¡ cargado. No se puede mostrar el toast.');
         // Como fallback, mostramos una alerta nativa.
         alert(title);
         return;
@@ -41,11 +41,11 @@ App.showToast = function(title, icon = 'success') {
 
 
 // =================================================================
-// 2. LÓGICA QUE DEPENDE DEL DOM
-// Se ejecuta solo cuando el HTML está completamente listo.
+// 2. LÃ“GICA QUE DEPENDE DEL DOM
+// Se ejecuta solo cuando el HTML estÃ¡ completamente listo.
 // =================================================================
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Lógica para la interactividad del sidebar ---
+    // --- LÃ³gica para la interactividad del sidebar ---
     const sidebar = document.querySelector('.sidebar');
     const backdrop = document.getElementById('sidebar-backdrop');
     const openBtn = document.getElementById('open-sidebar-btn');

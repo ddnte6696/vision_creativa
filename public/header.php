@@ -1,6 +1,6 @@
 <header>
   <!-- CONTACTO Y CUENTA -->
-    <?php //include 'public/top_header.php'; ?>
+    <?php include 'public/top_header.php'; ?>
   <!-- ENCABEZADO PRINCIPAL -->
     <div id="header">
       <div class="container">
@@ -15,7 +15,7 @@
             </div>
           <!-- BARRA DE BUSQUEDA -->
             <div class="col-md-6">
-              <?php //include 'public/search_bar.php'; ?>
+              <?php include 'public/search_bar.php'; ?>
             </div>
           <!-- CUENTA -->
             <div class="col-md-3 clearfix">

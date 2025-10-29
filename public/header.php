@@ -1,26 +1,28 @@
 <header>
-  <!-- CONTACTO Y CUENTA -->
+  <!-- CONTACTO Y CUENTA>
     <?php include 'public/top_header.php'; ?>
-  <!-- ENCABEZADO PRINCIPAL -->
+  <ENCABEZADO PRINCIPAL -->
     <div id="header">
       <div class="container">
         <div class="row">
           <!-- LOGO -->
-            <div class="col-md-3">
+            <div class="col-md-9 clearfix">
               <div class="header-logo">
-                <a href="#" class="logo">
-                  <img src="./img/logo.png" alt="">
+                <a href="index.php" class="logo">
+                  <img src="./img/logo/logo.png" alt="">
+                  <h3>VISION CREATIVA</h3>
                 </a>
               </div>
             </div>
-          <!-- BARRA DE BUSQUEDA -->
+          <!-- BARRA DE BUSQUEDA >
             <div class="col-md-6">
               <?php include 'public/search_bar.php'; ?>
+              
             </div>
-          <!-- CUENTA -->
+          <CUENTA -->
             <div class="col-md-3 clearfix">
               <div class="header-ctn">
-                <!-- WISHLIST -->
+                <!-- WISHLIST>
                   <div>
                     <a href="#">
                       <i class="fa fa-heart-o"></i>
@@ -28,7 +30,7 @@
                       <div class="qty">2</div>
                     </a>
                   </div>
-                <!-- CARRITO -->
+                <CARRITO -->
                   <?php include 'public/cart.php'; ?>
                 <!-- Menu Toogle -->
                   <div class="menu-toggle">

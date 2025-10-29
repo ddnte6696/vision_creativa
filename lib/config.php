@@ -21,10 +21,10 @@
 		define('NAME_DB','diginet_vision_creativa');
 		define('PORT_DB','3306');
 	/*//Constantes para conexion a base de datos (PRODUCCION)
-		define('USER_DB','');
-		define('PASSWRD_DB','');
+		define('USER_DB','omnibusg_vision_creativa');
+		define('PASSWRD_DB','?^dJQCW5]wX.');
 		define('HOST_DB','localhost');
-		define('NAME_DB','vision_creativa');
+		define('NAME_DB','omnibusg_vision_creativa');
 		define('PORT_DB','3306');*/
 	//Librerias de encriptado y limpieza
 		include_once A_LIB.'self/self_lmpz.php';

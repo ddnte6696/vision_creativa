@@ -6,7 +6,6 @@
           <!-- NAV -->
             <ul class="main-nav nav navbar-nav">
               <li><a href="index.php">Inicio</a></li>
-              <li><a href="launches.php">Lanzamientos</a></li>
             </ul>
           <!-- /NAV -->
         </div>

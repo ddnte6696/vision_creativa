@@ -46,7 +46,7 @@
                                       <!-- product -->
                                         <div class='product'>
                                           <div class='product-img'>
-                                            <img src='./img/productoS/$imagen' alt=''>
+                                            <img src='img/productos/$imagen' alt=''>
                                             <div class='product-label'>
                                               <span class='new'>NEW</span>
                                             </div>
@@ -64,7 +64,7 @@
                                             </div>
                                           </div>
                                           <div class='add-to-cart'>
-                                            <button class='add-to-cart-btn'><i class='fa fa-shopping-cart'></i>DETALLES</button>
+                                            <a href='view.php?summary=".campo_limpiado($id,1)."'><button class='add-to-cart-btn'><i class='fa fa-shopping-cart'></i>DETALLES</button></a>
                                           </div>
                                         </div>
                                       <!-- /product -->
